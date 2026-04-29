@@ -3,6 +3,8 @@ import express from 'express';
 import cors from 'cors';
 import { Pool } from 'pg';
 import jwt from 'jsonwebtoken';
+import authRouter from './routes/auth.js';
+import usersRouter from './routes/users.js';
 
 dotenv.config();
 const app = express();
@@ -15,6 +17,9 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/', (req, res) => {
   res.json({ message: 'API is working!' });
 });
+//API routes
+app.use('/api/auth', authRouter);
+app.use('/api/users', usersRouter);
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

@@ -5,7 +5,7 @@ import { Pool } from 'pg';
 dotenv.config();
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.DATABASE_URL === 'production' ? { rejectUnauthorized: false } : false
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
 });
 pool.on('connect',() => {
     console.log('Connected to the database');
