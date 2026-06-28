@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+const configuredApiUrl = import.meta.env.VITE_API_URL || '/api';
+const normalizedApiUrl = configuredApiUrl.replace(/\/$/, '');
+const API_URL = normalizedApiUrl.endsWith('/api') ? normalizedApiUrl : `${normalizedApiUrl}/api`;
 
 // Create axios instance
 const api = axios.create({
@@ -39,3 +41,5 @@ api.interceptors.response.use(
 );
 
 export default api;
+
+
