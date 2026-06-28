@@ -13,8 +13,22 @@ import recipesRouter from './routes/recipes.js';
 
 dotenv.config({ path: fileURLToPath(new URL('.env', import.meta.url)) });
 const app = express();
+const corsOptions = {
+  origin(origin, callback) {
+    // Allow non-browser and same-origin requests without an Origin header.
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`Origin ${origin} is not allowed by CORS`));
+  },
+  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  optionsSuccessStatus: 204,
+};
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
