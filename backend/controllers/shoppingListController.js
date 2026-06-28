@@ -61,8 +61,8 @@ export const addItem = async (req, res,next) => {
 * */
 export const updateItem = async (req, res,next) => {
     try {
-        const {id} = req.params;
-        const item = await ShoppingList.update(req.params.id, req.body);
+        const { id } = req.params;
+        const item = await ShoppingList.update(req.user.id, id, req.body);
         if (!item) {
             return res.status(404).json({
                 success:false,
@@ -85,7 +85,7 @@ export const updateItem = async (req, res,next) => {
 export const toggleChecked = async (req, res,next) => {
     try {
         const {id} = req.params;
-        const item = await ShoppingList.toggleChecked(id, req.user.id);
+        const item = await ShoppingList.toggleChecked(req.user.id, id);
         if (!item) {
             return res.status(404).json({
                 success:false,
@@ -107,7 +107,7 @@ export const toggleChecked = async (req, res,next) => {
 export const deleteItem = async (req, res,next) => {
     try {
         const {id} = req.params;
-        const item = await ShoppingList.delete(id, req.user.id);
+        const item = await ShoppingList.delete(req.user.id, id);
         if (!item) {
             return res.status(404).json({
                 success:false,

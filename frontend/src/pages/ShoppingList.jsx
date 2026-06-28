@@ -243,7 +243,7 @@ const ShoppingListItem = ({ item, onToggle, onDelete }) => {
                 <p className={`text-sm ${item.is_checked ? 'text-gray-400' : 'text-gray-600'}`}>
                     {item.quantity} {item.unit}
                     {item.from_meal_plan && (
-                        <span className="ml-2 text-xs text-emerald-600">• From meal plan</span>
+                        <span className="ml-2 text-xs text-emerald-600">â€¢ From meal plan</span>
                     )}
                 </p>
             </div>
@@ -270,13 +270,13 @@ const AddItemModal = ({ onClose, onSuccess }) => {
         e.preventDefault();
         setLoading(true);
         try {
-            await api.post('/shopping-list', {
+            const response = await api.post('/shopping-list', {
                 ...formData,
                 quantity: parseFloat(formData.quantity)
             });
             
             toast.success('Item added to shopping list');
-            onSuccess();
+            onSuccess(response.data.data.item);
             onClose();
         } catch (error) {
             console.error('Error adding item to shopping list:', error);

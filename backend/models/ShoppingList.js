@@ -1,4 +1,3 @@
-import { parse } from "dotenv";
 import db from "../config/db.js";
 class ShoppingList {
     /**
@@ -73,6 +72,25 @@ class ShoppingList {
         return result.rows;
     }
     /**
+     * Get shopping list items grouped by category for a user
+     * */
+    static async getGroupedByCategory(userId) {
+        const items = await this.findByUserId(userId);
+        const grouped = items.reduce((groups, item) => {
+            const category = item.category || 'Other';
+            if (!groups[category]) {
+                groups[category] = [];
+            }
+            groups[category].push(item);
+            return groups;
+        }, {});
+
+        return Object.entries(grouped).map(([category, categoryItems]) => ({
+            category,
+            items: categoryItems,
+        }));
+    }
+    /**
      * Update shopping list item 
      * */
     static async update(userId, itemId,updates) {
@@ -88,7 +106,7 @@ class ShoppingList {
     /**
      * Toggle check/uncheck item
      * */
-    static async toggleCheck(userId, itemId) {
+    static async toggleChecked(userId, itemId) {
         const result = await db.query(
             `UPDATE shopping_list_items 
         SET is_checked = NOT is_checked
@@ -108,11 +126,11 @@ class ShoppingList {
         return result.rows[0];
     }
     /**
-     * Clear all items from shopping list
+     * Clear checked items from shopping list
      * */
     static async clearChecked(userId) {
         const result = await db.query(
-            'DELETE FROM shopping_list_items WHERE user_id = $1 RETURNING *',
+            'DELETE FROM shopping_list_items WHERE user_id = $1 AND is_checked = true RETURNING *',
             [userId]
         );
         return result.rows;
