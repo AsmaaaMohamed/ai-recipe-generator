@@ -13,10 +13,24 @@ import recipesRouter from './routes/recipes.js';
 
 dotenv.config({ path: fileURLToPath(new URL('.env', import.meta.url)) });
 const app = express();
+const defaultAllowedOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'https://ai-recipe-generator-phi-nine.vercel.app',
+];
+
+const allowedOrigins = [
+  ...defaultAllowedOrigins,
+  process.env.CLIENT_URL,
+  ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : []),
+]
+  .filter(Boolean)
+  .map((origin) => origin.trim().replace(/\/$/, ''));
 const corsOptions = {
   origin(origin, callback) {
     // Allow non-browser and same-origin requests without an Origin header.
-    if (!origin || allowedOrigins.includes(origin)) {
+    const normalizedOrigin = origin?.replace(/\/$/, '');
+    if (!normalizedOrigin || allowedOrigins.includes(normalizedOrigin)) {
       return callback(null, true);
     }
 
@@ -58,3 +72,4 @@ app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
+
