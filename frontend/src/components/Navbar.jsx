@@ -1,15 +1,30 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ChefHat, Home, UtensilsCrossed, Calendar, ShoppingCart, Settings, LogOut } from 'lucide-react';
+import { ChefHat, Home, UtensilsCrossed, Calendar, ShoppingCart, Settings, LogOut, ChevronDown } from 'lucide-react';
+import { useState , useEffect, useRef} from 'react';
 
 const Navbar = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
-
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef();
     const handleLogout = () => {
         logout();
         navigate('/login');
+        setIsDropdownOpen(false);
     };
+    //Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []); 
 
     return (
         <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -39,13 +54,43 @@ const Navbar = () => {
                         >
                             <Settings className="w-5 h-5" />
                         </Link>
-                        <button
-                            onClick={handleLogout}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-                        >
-                            <LogOut className="w-4 h-4" />
-                            <span className="hidden sm:inline">Logout</span>
-                        </button>
+                        {/* User Profile Dropdown */}
+                        <div className="relative" ref={dropdownRef}>
+                            <button
+                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white">
+                                    {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                                </div>
+                                <span className="hidden sm:inline">{user?.name || 'User'}</span>
+                                <ChevronDown className={`w-4 h-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                            </button>
+                            {/* Dropdown Menu */}
+                            {isDropdownOpen && (
+                                <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-md shadow-lg">
+                                    {/* user Info */}
+                                    <div className="px-4 py-3 text-sm border-b border-gray-200">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white">
+                                                {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                                            </div>
+                                            <div>
+                                                <p className="font-medium">{user?.name || 'User'}</p>
+                                                <p className="text-gray-500">{user?.email || 'user@example.com'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={handleLogout}
+                                        className="w-full cursor-pointer flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:text-red-800  rounded-md transition-colors"
+                                    >
+                                        <LogOut className="w-4 h-4" />
+                                        <span>Logout</span>
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

@@ -1,17 +1,17 @@
-import e from "express";
-import db from "../config/db";
+import db from "../config/db.js";
 
 class MealPlan {
     /**
      * Add recipes to a meal plan
      * */
     static async create(userId, mealData) {
-        const {recipe_id, planned_date, meal_type,meal_date} = mealData;
-        const date = planned_date || meal_date ;
+        const { recipe_id, planned_date, meal_type, meal_date } = mealData;
+        const date = meal_date || planned_date;
         const result = await db.query(
-            `INSERT INTO meal_plans (user_id, recipe_id, planned_date, meal_type)
+            `INSERT INTO meal_plans (user_id, recipe_id, meal_date, meal_type)
             VALUES ($1, $2, $3::date, $4)
-            ON CONFLICT (user_id, meal_date, meal_type) DO UPDATE SET recipe_id = $2
+            ON CONFLICT (user_id, meal_date, meal_type) DO UPDATE
+            SET recipe_id = EXCLUDED.recipe_id
             RETURNING *`,
             [userId, recipe_id, date, meal_type]
         );
@@ -45,7 +45,7 @@ class MealPlan {
     /**
      * Get ipcoming meals (next 7 days)
      * */
-    static async getUpcoming(userId) {
+    static async getUpcomingMeals(userId, limit = 5) {
         const result = await db.query(
             `SELECT mp.*,
              r.name AS recipe_name, r.image_url
@@ -71,6 +71,7 @@ class MealPlan {
             'DELETE FROM meal_plans WHERE id = $1 AND user_id = $2 RETURNING *',
             [id, userId]
         );
+        return result.rows[0];
     }
     /**
      * Get meal plan stats

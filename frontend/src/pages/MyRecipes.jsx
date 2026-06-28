@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Search, Clock, ChefHat, Trash2 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import toast from 'react-hot-toast';
-import { dummyRecipes } from '../data/dummyData';
+import api from '../services/api';
 
 const MyRecipes = () => {
     const [recipes, setRecipes] = useState([]);
@@ -11,19 +11,30 @@ const MyRecipes = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCuisine, setSelectedCuisine] = useState('All');
     const [selectedDifficulty, setSelectedDifficulty] = useState('All');
+    const[loading,setLoading]=useState(false);
 
     const cuisines = ['All', 'Italian', 'Mexican', 'Indian', 'Chinese', 'Japanese', 'Thai', 'French', 'Mediterranean', 'American'];
     const difficulties = ['All', 'easy', 'medium', 'hard'];
 
     useEffect(() => {
-        // Load dummy recipes
-        setRecipes(dummyRecipes);
+        fetchRecipes();
     }, []);
 
     useEffect(() => {
         filterRecipes();
     }, [recipes, searchQuery, selectedCuisine, selectedDifficulty]);
-
+    const fetchRecipes = async () => {
+        setLoading(true);
+        try {
+            const response = await api.get('/recipes');
+            setRecipes(response.data.data.recipes);
+        } catch (error) {
+            console.error('Error fetching recipes:', error);
+            toast.error('Failed to load recipes');
+        } finally {
+            setLoading(false);
+        }
+    };
     const filterRecipes = () => {
         let filtered = recipes;
 

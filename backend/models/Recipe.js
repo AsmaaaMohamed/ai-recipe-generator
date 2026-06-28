@@ -1,4 +1,4 @@
-import db from "../config/db";
+import db from '../config/db.js';
 
 class Recipe {
     /**
@@ -8,10 +8,10 @@ class Recipe {
         const client = await db.pool.connect();
         try {
             await client.query('BEGIN');
-            const { name, description, cuisne_type, difficulty,prep_time, cook_time, servings, instructions,dietary_tags=[] , user_notes, image_url, ingredients = [], nutrition = {}} = recipeData;
+            const { name, description, cuisine_type, difficulty,prep_time, cook_time, servings, instructions,dietary_tags=[] , user_notes, image_url, ingredients = [], nutrition = {}} = recipeData;
             const recipeResult = await client.query(
-                'INSERT INTO recipes (user_id, name, cuisine_type , difficulty, dietary_tags , user_notes,description, instructions, servings, prep_time, cook_time, image_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
-                [userId, name, cuisne_type, difficulty, dietary_tags, user_notes,description,JSON.stringify(instructions), servings, dietary_tags, prep_time, cook_time, image_url]
+                'INSERT INTO recipes (user_id, name, cuisine_type, difficulty, dietary_tags, user_notes, description, instructions, servings, prep_time, cook_time, image_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *',
+                [userId, name, cuisine_type, difficulty, dietary_tags, user_notes, description, JSON.stringify(instructions), servings, prep_time, cook_time, image_url]
             );
             const recipe = recipeResult.rows[0];
             // Insert ingredients
@@ -73,7 +73,7 @@ class Recipe {
     /**
      * Get all recipes for a user
      * */
-    static async findById(userId,filters = {}) {
+    static async findByUserId(userId,filters = {}) {
         let query = "SELECT r.*, rn.calories FROM recipes r LEFT JOIN recipe_nutrition rn ON r.id = rn.recipe_id WHERE r.user_id = $1";
         const params = [userId];
         let paramCount = 1;
@@ -121,7 +121,7 @@ class Recipe {
     /**
      * Get recent recipes for a user
      * */
-    static async findRecent(userId, limit = 5) {
+    static async getRecent(userId, limit = 5) {
         const result = await db.query(
             'SELECT r.*, rn.calories FROM recipes r LEFT JOIN recipe_nutrition rn ON r.id = rn.recipe_id WHERE r.user_id = $1 ORDER BY r.created_at DESC LIMIT $2',
             [userId, limit]
@@ -132,7 +132,7 @@ class Recipe {
      * Update a recipe, including ingredients and nutrition info
      * */
     static async update(id, userId, recipeData) {
-        const{ name, description, cuisne_type, difficulty,prep_time, cook_time, servings, instructions,dietary_tags , user_notes, image_url} = recipeData;
+        const{ name, description, cuisine_type, difficulty,prep_time, cook_time, servings, instructions,dietary_tags , user_notes, image_url} = recipeData;
         const result = await db.query(
             `UPDATE recipes
             SET name=COALESCE($1, name),
@@ -148,7 +148,7 @@ class Recipe {
                 image_url=COALESCE($11, image_url)
             WHERE id = $12 AND user_id = $13
             RETURNING *`,
-            [name, description, cuisne_type, difficulty,prep_time, cook_time, servings, instructions?JSON.stringify(instructions): null,dietary_tags , user_notes, image_url, id, userId]
+            [name, description, cuisine_type, difficulty,prep_time, cook_time, servings, instructions?JSON.stringify(instructions): null,dietary_tags , user_notes, image_url, id, userId]
         );
         return result.rows[0];
     }
@@ -156,7 +156,7 @@ class Recipe {
      * Delete a recipe
      * */
     static async delete(id, userId) {
-        return await db.query(
+        const result = await db.query(
             'DELETE FROM recipes WHERE id = $1 AND user_id = $2 RETURNING *',
             [id, userId]
         );

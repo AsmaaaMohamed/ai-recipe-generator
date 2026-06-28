@@ -1,7 +1,6 @@
 import Recipe from "../models/Recipe.js";
-import PantryItem from "../models/PantryItem";
+import PantryItem from "../models/PantryItem.js";
 import{generateRecipe as generateRecipeAI , generatePanrySuggestions as generatePanrySuggestionsAI} from "../utils/gemini.js";
-import { parse } from "dotenv";
 
 /** 
  * Generate a recipe using AI
@@ -47,8 +46,7 @@ export const getPantrySuggestions = async (req, res, next) => {
     try {
         const pantryItems = await PantryItem.findByUserId(req.user.id);
         const expiringItems = await PantryItem.getExpiringSoon(req.user.id, 7);
-        const expiringNames = expiringItems.map(item => item.name);
-        const suggestions = await generatePanrySuggestionsAI(ingredientNames);
+        const suggestions = await generatePanrySuggestionsAI(pantryItems, expiringItems);
         res.json({
             success: true,
             data: {suggestions}

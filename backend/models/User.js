@@ -16,11 +16,30 @@ class User {
     );
     return result.rows[0];
    }
+   /** 
+    * Find user by email
+    * @param {string} email - The email of the user to find
+   */   
+   static async findByEmail(email) {
+    const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+    return result.rows[0];
+   }
     /** 
      * Find user by ID
     */
     static async findById(id) {
         const result = await db.query('SELECT id, name, email FROM users WHERE id = $1', [id]);
+        return result.rows[0];
+    }
+    /** 
+     * Update user profile
+    */    
+    static async update(id, data) {
+        const { name, email } = data;
+        const result = await db.query(
+            'UPDATE users SET name = COALESCE($1, name), email = COALESCE($2, email) WHERE id = $3 RETURNING id, name, email',
+            [name, email, id]
+        );
         return result.rows[0];
     }
     /** 

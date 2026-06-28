@@ -24,6 +24,12 @@ export const register = async (req, res, next) => {
         if (!name || !email || !password) {
             return res.status(400).json({ success: false, message: 'Please provide name, email and password' });
         }
+        //check if user already exists
+        const existingUser = await User.findByEmail(email);
+        if (existingUser) {
+            return res.status(400).json({ success: false, message: 'Email already in use' });
+        }
+        //create user
         const user = await User.create(name, email, password);
         //create default user preferences
         await UserPreference.upsert(user.id, {
@@ -59,7 +65,7 @@ export const login = async (req, res, next) => {
             return res.status(401).json({ success: false, message: 'Invalid email or password' });
         }
         //verify password
-        const isPasswordValid = await user.comparePassword(password , user.password_hash);
+        const isPasswordValid = await User.verifyPassword(password , user.password_hash);
         if (!isPasswordValid) {
             return res.status(401).json({ success: false, message: 'Invalid email or password' });
         }

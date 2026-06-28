@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Clock, Users, ChefHat, ArrowLeft, Trash2, Calendar } from 'lucide-react';
+import { Clock, Users, ChefHat, ArrowLeft, Trash2 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import toast from 'react-hot-toast';
-import { getRecipeById } from '../data/dummyData';
+import api from '../services/api';
 
 const RecipeDetail = () => {
     const { id } = useParams();
@@ -11,23 +11,29 @@ const RecipeDetail = () => {
     const [recipe, setRecipe] = useState(null);
     const [servings, setServings] = useState(4);
     const [checkedIngredients, setCheckedIngredients] = useState(new Set());
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        loadRecipe();
+        fetchRecipe();
     }, [id]);
 
-    const loadRecipe = () => {
-        const recipeData = getRecipeById(parseInt(id));
-        if (recipeData) {
+   const fetchRecipe = async () => {
+        setLoading(true);
+        try {
+            const response = await api.get(`/recipes/${id}`);
+            const recipeData = response.data.data.recipe;
             setRecipe(recipeData);
             setServings(recipeData.servings || 4);
-        } else {
-            toast.error('Recipe not found');
+        } catch (error) {
+            console.error('Error fetching recipe:', error);
+            toast.error('Failed to load recipe');
             navigate('/recipes');
+        } finally {
+            setLoading(false);
         }
     };
 
-    const handleDelete = () => {
+    const handleDelete = async () => {
         if (!confirm('Are you sure you want to delete this recipe?')) return;
 
         // UI-only delete
@@ -48,6 +54,23 @@ const RecipeDetail = () => {
     const adjustQuantity = (originalQty, originalServings) => {
         return ((originalQty * servings) / originalServings).toFixed(2);
     };
+
+    const getInstructionText = (step) => {
+        if (typeof step === 'string') return step;
+        return step?.text || step?.instruction || step?.description || '';
+    };
+
+    if(loading){
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <Navbar />
+                <div className="text-center">
+                    <ChefHat className="w-12 h-12 text-gray-400 mx-auto animate-pulse" />
+                    <p className="mt-4 text-gray-600">Loading recipe...</p>
+                </div>
+            </div>
+        );
+    }
 
     if (!recipe) {
         return null;
@@ -174,6 +197,7 @@ const RecipeDetail = () => {
                                 {recipe.ingredients && recipe.ingredients.map((ingredient, index) => {
                                     const adjustedQty = adjustQuantity(ingredient.quantity, originalServings);
                                     const isChecked = checkedIngredients.has(index);
+                                    const ingredientName = ingredient.name || ingredient.ingredient_name;
 
                                     return (
                                         <label
@@ -187,7 +211,7 @@ const RecipeDetail = () => {
                                                 className="mt-1 w-4 h-4 text-emerald-500 border-gray-300 rounded focus:ring-emerald-500"
                                             />
                                             <span className={`flex-1 ${isChecked ? 'line-through text-gray-400' : 'text-gray-700'}`}>
-                                                <span className="font-medium">{adjustedQty}</span> {ingredient.unit} {ingredient.name}
+                                                <span className="font-medium">{adjustedQty}</span> {ingredient.unit} {ingredientName}
                                             </span>
                                         </label>
                                     );
@@ -201,14 +225,18 @@ const RecipeDetail = () => {
                         <div className="bg-white rounded-xl border border-gray-200 p-6">
                             <h2 className="text-xl font-semibold text-gray-900 mb-4">Instructions</h2>
                             <ol className="space-y-4">
-                                {recipe.instructions && recipe.instructions.map((step, index) => (
-                                    <li key={index} className="flex gap-4">
-                                        <span className="shrink-0 w-8 h-8 bg-emerald-500 text-white rounded-full flex items-center justify-center text-sm font-semibold">
-                                            {index + 1}
-                                        </span>
-                                        <p className="text-gray-700 pt-1 flex-1">{step}</p>
-                                    </li>
-                                ))}
+                                {recipe.instructions && recipe.instructions.map((step, index) => {
+                                    const instructionText = getInstructionText(step);
+
+                                    return (
+                                        <li key={index} className="flex gap-4">
+                                            <span className="shrink-0 w-8 h-8 bg-emerald-500 text-white rounded-full flex items-center justify-center text-sm font-semibold">
+                                                {index + 1}
+                                            </span>
+                                            <p className="text-gray-700 pt-1 flex-1">{instructionText}</p>
+                                        </li>
+                                    );
+                                })}
                             </ol>
                         </div>
 

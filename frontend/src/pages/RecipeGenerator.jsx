@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { ChefHat, Sparkles, Plus, X, Clock, Users } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import toast from 'react-hot-toast';
-import { dummyPreferences, dummyGeneratedRecipe } from '../data/dummyData';
+import api from '../services/api';
 
 const CUISINES = ['Any', 'Italian', 'Mexican', 'Indian', 'Chinese', 'Japanese', 'Thai', 'French', 'Mediterranean', 'American'];
 const DIETARY_OPTIONS = ['Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free', 'Keto', 'Paleo'];
@@ -11,6 +11,11 @@ const COOKING_TIMES = [
     { value: 'medium', label: 'Medium (30-60 min)' },
     { value: 'long', label: 'Long (>60 min)' }
 ];
+
+const getInstructionText = (step) => {
+    if (typeof step === 'string') return step;
+    return step?.text || step?.instruction || step?.description || '';
+};
 
 const RecipeGenerator = () => {
     const [ingredients, setIngredients] = useState([]);
@@ -27,16 +32,32 @@ const RecipeGenerator = () => {
 
     // Load user preferences on component mount
     useEffect(() => {
-        // Load dummy preferences
-        if (dummyPreferences.dietary_restrictions && dummyPreferences.dietary_restrictions.length > 0) {
-            setDietaryRestrictions(dummyPreferences.dietary_restrictions);
-        }
-        if (dummyPreferences.preferred_cuisines && dummyPreferences.preferred_cuisines.length > 0) {
-            setCuisineType(dummyPreferences.preferred_cuisines[0]);
-        }
-        if (dummyPreferences.default_servings) {
-            setServings(dummyPreferences.default_servings);
-        }
+        const fetchUserPreferences = async () => {
+            try {
+                const response = await api.get('/user/profile');
+                const preferences = response.data.recipePreferences || {};
+                if (preferences){
+                    // Auto-fill dietary restrictions
+                    if(preferences.dietary_restrictions && preferences.dietary_restrictions.length > 0){
+                        setDietaryRestrictions(preferences.dietary_restrictions);
+                    }
+                    // Auto-fill preferred cuisine)use first one if multiple)
+                    if(preferences.preferred_cuisines && preferences.preferred_cuisines.length > 0){
+                        setCuisineType(preferences.preferred_cuisines[0]);
+                    }
+                    //Auto-fill default servings
+                    if(preferences.default_servings){
+                        setServings(preferences.default_servings);
+                    }
+                    setPreferencesLoaded(true);
+                }
+            } catch (error) {
+                console.error('Error fetching user preferences:', error);
+                toast.error('Failed to load user preferences');
+                setPreferencesLoaded(true); // Still allow user to use the generator even if preferences fail to load
+            }
+        };
+        fetchUserPreferences();
     }, []);
 
     const addIngredient = () => {
@@ -58,7 +79,7 @@ const RecipeGenerator = () => {
         }
     };
 
-    const handleGenerate = () => {
+    const handleGenerate = async() => {
         if (!usePantry && ingredients.length === 0) {
             toast.error('Please add at least one ingredient or use pantry items');
             return;
@@ -66,20 +87,53 @@ const RecipeGenerator = () => {
 
         setGenerating(true);
         setGeneratedRecipe(null);
-
-        // Simulate API delay
-        setTimeout(() => {
-            setGeneratedRecipe(dummyGeneratedRecipe);
-            toast.success('Recipe generated successfully!');
+        try{
+            const response = await api.post('/recipes/generate', {
+                ingredients,
+                usePantryIngredients:usePantry,
+                cuisineType:cuisineType==='Any' ?'any':cuisineType,
+                dietaryRestrictions,
+                servings,
+                cookingTime
+            });
+            setGeneratedRecipe(response.data.data.recipe);
+            toast.success('Recipe generated successfully')
+        }
+        catch(error){
+            console.error('Error generating recipe:', error);
+            toast.error(error.response?.data?.message ||'Failed to generate recipe. Please try again.');
+        }
+        finally{
             setGenerating(false);
-        }, 1500);
+        }
     };
 
-    const handleSaveRecipe = () => {
+    const handleSaveRecipe = async() => {
         if (!generatedRecipe) return;
-
-        // UI-only save (no API call)
-        toast.success('Recipe saved to your collection!');
+        setSaving(true);
+        try{
+            await api.post('/recipes',{
+                name: generatedRecipe.name,
+                description: generatedRecipe.description,
+                cuisine_type: generatedRecipe.cuisineType,
+                difficulty: generatedRecipe.difficulty,
+                prep_time: generatedRecipe.prepTime,
+                cook_time: generatedRecipe.cookTime,
+                servings: generatedRecipe.servings,
+                dietary_tags: generatedRecipe.dietaryTags,
+                ingredients: generatedRecipe.ingredients,
+                nutrition: generatedRecipe.nutrition,
+                instructions: generatedRecipe.instructions,
+            });
+            toast.success('Recipe saved successfully');
+        }
+        catch(error){
+            console.error('Error saving recipe:', error);
+            toast.error(error.response?.data?.message ||'Failed to save recipe. Please try again.');
+        }
+        finally{
+            setSaving(false);
+        }
     };
 
     return (
@@ -303,14 +357,18 @@ const RecipeGenerator = () => {
                                 <div>
                                     <h3 className="font-semibold text-gray-900 mb-3">Instructions</h3>
                                     <ol className="space-y-3">
-                                        {generatedRecipe.instructions?.map((step, index) => (
-                                            <li key={index} className="flex gap-3">
-                                                <span className="shrink-0 w-6 h-6 bg-emerald-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                                                    {index + 1}
-                                                </span>
-                                                <span className="text-gray-700 pt-0.5">{step}</span>
-                                            </li>
-                                        ))}
+                                        {generatedRecipe.instructions?.map((step, index) => {
+                                            const instructionText = getInstructionText(step);
+
+                                            return (
+                                                <li key={index} className="flex gap-3">
+                                                    <span className="shrink-0 w-6 h-6 bg-emerald-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
+                                                        {index + 1}
+                                                    </span>
+                                                    <span className="text-gray-700 pt-0.5">{instructionText}</span>
+                                                </li>
+                                            );
+                                        })}
                                     </ol>
                                 </div>
 

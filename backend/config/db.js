@@ -1,8 +1,8 @@
 import dotenv from 'dotenv';
-import e from 'express';
 import { Pool } from 'pg';
+import { fileURLToPath } from 'url';
 
-dotenv.config();
+dotenv.config({ path: fileURLToPath(new URL('../.env', import.meta.url)) });
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false

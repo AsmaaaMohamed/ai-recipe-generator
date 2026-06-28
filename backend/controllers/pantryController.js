@@ -1,4 +1,3 @@
-import e from "express";
 import PantryItem from "../models/PantryItem.js";
 
 /**
@@ -61,6 +60,45 @@ export const updatePantryItem = async (req, res, next) => {
         res.json({
             success: true,
             message:'Pantry item updated',
+            data: {item}
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Get pantry items expiring soon
+* */
+export const getExpiringSoon = async (req, res, next) => {
+    try {
+        const days = Number(req.query.days) || 7;
+        const items = await PantryItem.getExpiringSoon(req.user.id, days);
+        res.json({
+            success: true,
+            data: {items}
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Delete pantry item
+* */
+export const deletePantryItem = async (req, res, next) => {
+    try {
+        const {id} = req.params;
+        const item = await PantryItem.delete(id, req.user.id);
+        if(!item) {
+            return res.status(404).json({
+                success: false,
+                message:'Pantry item not found'
+            });
+        }
+        res.json({
+            success: true,
+            message:'Pantry item deleted',
             data: {item}
         });
     } catch (error) {
