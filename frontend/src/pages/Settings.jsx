@@ -39,7 +39,7 @@ const Settings = () => {
     useEffect(() => {
         const fetchUserData = async () => {
             try {
-                const response = await api.get('/user');
+                const response = await api.get('/users/profile');
                 const{user , preferences:userPrefs} = response.data.data;
                 setProfile({
                     name: user.name,
@@ -422,3 +422,4 @@ const Settings = () => {
 };
 
 export default Settings;
+

@@ -34,8 +34,8 @@ const RecipeGenerator = () => {
     useEffect(() => {
         const fetchUserPreferences = async () => {
             try {
-                const response = await api.get('/user/profile');
-                const preferences = response.data.recipePreferences || {};
+                const response = await api.get('/users/profile');
+                const preferences = response.data.data?.preferences || {};
                 if (preferences){
                     // Auto-fill dietary restrictions
                     if(preferences.dietary_restrictions && preferences.dietary_restrictions.length > 0){
@@ -436,3 +436,4 @@ const NutritionBadge = ({ label, value, unit }) => (
 );
 
 export default RecipeGenerator;
+

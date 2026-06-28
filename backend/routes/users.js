@@ -6,6 +6,7 @@ const router = express.Router();
 //All routes in this file are protected by authMiddleware
 router.use(authMiddleware);
 //Protected routes
+router.get('/', userController.getProfile);
 router.get('/profile', userController.getProfile);
 router.put('/profile', userController.updateProfile);
 router.put('/change-password', userController.changePassword);

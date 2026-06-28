@@ -51,8 +51,18 @@ app.get('/', (req, res) => {
   res.json({ message: 'API is working!' });
 });
 //API routes
+app.use('/api/auth', authRouter);
+app.use('/api/users', usersRouter);
+app.use('/api/user', usersRouter);
+app.use('/api/pantry', pantryRouter);
+app.use('/api/shopping-list', shoppingListRouter);
+app.use('/api/meal-plans', mealPlansRouter);
+app.use('/api/recipes', recipesRouter);
+
+// Compatibility routes for clients configured without the /api prefix.
 app.use('/auth', authRouter);
 app.use('/users', usersRouter);
+app.use('/user', usersRouter);
 app.use('/pantry', pantryRouter);
 app.use('/shopping-list', shoppingListRouter);
 app.use('/meal-plans', mealPlansRouter);
@@ -72,5 +82,4 @@ app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
-
 
